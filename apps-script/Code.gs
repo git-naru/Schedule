@@ -90,6 +90,7 @@ const REMINDERS = [0, 10, 30, 60, 1440];
 const FIELD_TYPES = ['text', 'number', 'date', 'select', 'check'];
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 const HM = /^\d{2}:\d{2}$/;
+const NEW_TASK = '__new';
 
 function text_(v, max, label) {
   const s = String(v == null ? '' : v).trim();
@@ -112,6 +113,7 @@ function cleanEvent_(input) {
     location: text_(input.location, 200, '장소'),
     memo: text_(input.memo, 5000, '메모'),
     recordId: input.recordId ? String(input.recordId) : '',
+    taskId: input.taskId ? String(input.taskId) : '',
     toGoogle: !!input.toGoogle,
     toApple: !!input.toApple,
   };
@@ -148,6 +150,18 @@ function saveEvent(input) {
     ev.apple = null;
     ev.sync = {};
 
+    // 할 일 연결: '__new' 이면 일정 제목으로 새 할 일을 만들어 연결한다.
+    let newTask = null;
+    if (ev.taskId === NEW_TASK) {
+      newTask = upsert('tasks', {
+        id: '', title: ev.title, workspace: ev.workspace, done: false, due: ev.date, detail: '',
+        createdAt: new Date().toISOString(),
+      });
+      ev.taskId = newTask.id;
+    } else if (ev.taskId && !getById('tasks', ev.taskId)) {
+      ev.taskId = '';
+    }
+
     // Google: 바뀐 내용을 정확히 반영하려고 이전 사본을 지우고 새로 만든다.
     if (old && old.google) {
       try { googleDelete(old.google); } catch (e) { ev.sync.google = '이전 Google 일정을 지우지 못했습니다: ' + e.message; }
@@ -165,7 +179,9 @@ function saveEvent(input) {
       try { ev.apple = { url: iCloudPut(ev, keepUrl) }; ev.sync.apple = 'ok'; } catch (e) { ev.sync.apple = e.message; }
     }
 
-    return upsert('events', ev);
+    const saved = upsert('events', ev);
+    if (newTask) saved.newTask = newTask; // 화면에 알려 주기만 하고 시트에는 저장하지 않는다
+    return saved;
   });
 }
 
@@ -206,7 +222,14 @@ function saveTask(input) {
 }
 
 function deleteTask(input) {
-  return withLock(function () { remove('tasks', String(input.id)); return { ok: true }; });
+  return withLock(function () {
+    const id = String(input.id);
+    readAll('events').forEach(function (ev) {
+      if (ev.taskId === id) { ev.taskId = ''; upsert('events', ev); }
+    });
+    remove('tasks', id);
+    return { ok: true };
+  });
 }
 
 // ---------- 데이터베이스 ----------

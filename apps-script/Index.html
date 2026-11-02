@@ -119,6 +119,11 @@ h1,h2,h3,p{margin:0}
 .tkmeta select,.tkmeta input[type=date]{min-height:34px;border:1px solid var(--t-line);border-radius:4px;background:var(--t-surface);color:var(--t-text);padding:0 6px;font-size:13px}
 .tkmeta input[type=checkbox]{width:18px;height:18px;accent-color:var(--t-accent)}
 .tkmeta .saved{margin-left:auto;white-space:nowrap}
+.tkev{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px}
+.tkev>span{color:var(--t-muted)}
+.tkev button{border:0;border-radius:4px;padding:4px 10px;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+.tkev .add{background:none;border:1px dashed var(--t-line);color:var(--t-muted)}
+.tkev .add svg{width:14px;height:14px}
 .tbar{display:flex;flex-wrap:wrap;align-items:center;gap:2px;padding:4px;border:1px solid var(--t-line);border-radius:4px;background:var(--t-surface2);position:relative}
 .tbar select{height:32px;border:1px solid var(--t-line);border-radius:3px;background:var(--t-surface);color:var(--t-text);font-size:13px;padding:0 4px;margin-right:2px}
 .tbar svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
@@ -127,7 +132,7 @@ h1,h2,h3,p{margin:0}
 .tbar .sep{width:1px;height:20px;background:var(--t-line);margin:0 3px}
 .tbar .pal{position:absolute;top:100%;margin-top:4px;z-index:5;display:flex;gap:4px;padding:6px;background:var(--t-surface);border:1px solid var(--t-line);border-radius:4px;box-shadow:0 6px 18px rgba(0,0,0,.15)}
 .tbar .pal button{width:28px;min-width:28px;height:28px;border:1px solid var(--t-line);padding:0}
-.doc{flex:1;min-height:180px;overflow:auto;border:1px solid var(--t-line);border-radius:4px;padding:18px 22px;background:var(--t-surface);color:var(--t-text);font-size:15px;line-height:1.75;outline:none;overflow-wrap:anywhere}
+.doc{flex:1;min-height:140px;overflow:auto;border:1px solid var(--t-line);border-radius:4px;padding:18px 22px;background:var(--t-surface);color:var(--t-text);font-size:15px;line-height:1.75;outline:none;overflow-wrap:anywhere}
 .doc:focus{border-color:var(--t-accent)}
 .doc:empty::before{content:attr(data-ph);color:var(--t-muted)}
 .doc h1{font-size:22px;margin:.6em 0 .3em;color:var(--t-title)}
@@ -580,8 +585,9 @@ function viewDash() {
     var height = Math.max(26, (minutesOf(p.ev.end) - minutesOf(p.ev.start)) / 60 * H - 4);
     var w = 100 / p.lanes;
     var rec = p.ev.recordId && recById(p.ev.recordId);
+    var tk = p.ev.taskId && S.data.tasks.filter(function (x) { return x.id === p.ev.taskId; })[0];
     return '<button type="button" class="blk ' + (p.ev.workspace === 'work' ? 'bw' : 'bp') + '" data-ev="' + p.ev.id + '" style="top:' + top + 'px;height:' + height + 'px;left:calc(' + (p.lane * w) + '% + 4px);width:calc(' + w + '% - 6px)">' +
-      '<div><strong>' + esc(p.ev.title) + '</strong><small class="num">' + evTime(p.ev) + (p.ev.location ? ' · ' + esc(p.ev.location) : '') + (rec ? ' · 연결: ' + esc(rec.title) : '') + '</small></div>' + (p.lanes === 1 ? wsLabel(p.ev.workspace) : '') + '</button>';
+      '<div><strong>' + (tk ? '<span title="할 일: ' + esc(tk.title) + '">' + (tk.done ? '☑ ' : '☐ ') + '</span>' : '') + esc(p.ev.title) + '</strong><small class="num">' + evTime(p.ev) + (p.ev.location ? ' · ' + esc(p.ev.location) : '') + (rec ? ' · 연결: ' + esc(rec.title) : '') + (tk ? ' · 할 일' + (tk.done ? ' 완료' : '') : '') + '</small></div>' + (p.lanes === 1 ? wsLabel(p.ev.workspace) : '') + '</button>';
   }).join('');
   var nowLine = day === t && minutesOf(now.hm) >= minH * 60 && minutesOf(now.hm) <= maxH * 60
     ? '<div class="now" style="top:' + ((minutesOf(now.hm) - minH * 60) / 60 * H) + 'px"></div>' : '';
@@ -638,7 +644,7 @@ function viewDash() {
       '<button type="button" class="btn" data-act="new-event" data-date="' + day + '">' + icon('plus') + '새로 만들기</button>') +
     '<div class="dash">' +
       '<div class="col1">' +
-        '<section class="card tkcard"><h2>할 일 <small>' + open + '개 남음</small></h2>' +
+        '<section class="card tkcard"><h2>할 일 <small><span class="saved" id="tkSaved">' + (cur && cur.updatedAt ? '저장됨' : '') + '</span>' + (cur ? ' · ' : '') + open + '개 남음</small></h2>' +
           '<div class="tws">' +
             '<div class="tklist"><div class="tkitems">' + taskHtml + '</div>' +
               '<form class="addrow" id="taskForm"><input id="taskTitle" placeholder="할 일 추가" aria-label="할 일 추가" maxlength="200">' +
@@ -679,8 +685,12 @@ function taskEditor(x) {
       '<label>구분 <select id="tkWs"><option value="work"' + (x.workspace === 'work' ? ' selected' : '') + '>업무</option><option value="personal"' + (x.workspace === 'personal' ? ' selected' : '') + '>개인</option></select></label>' +
       '<label>마감 <input type="date" id="tkDue" value="' + esc(x.due || '') + '"></label>' +
       '<label><input type="checkbox" data-task="' + x.id + '"' + (x.done ? ' checked' : '') + '> 완료</label>' +
-      '<small class="saved" id="tkSaved">' + (x.updatedAt ? '저장됨' : '') + '</small>' +
     '</div>' +
+    '<div class="tkev"><span>연결된 일정</span>' + S.data.events.filter(function (e) { return e.taskId === x.id; })
+      .sort(function (a, b) { return (a.date + a.start) < (b.date + b.start) ? -1 : 1; }).map(function (e) {
+        return '<button type="button" class="' + (e.workspace === 'work' ? 'tw' : 'tp') + '" data-ev="' + e.id + '"><span class="num">' + e.date.slice(5).replace('-', '/') + ' ' + (e.allDay ? '종일' : e.start) + '</span> ' + esc(e.title) + '</button>';
+      }).join('') +
+      '<button type="button" class="add" data-act="new-event" data-task-ev="' + x.id + '" data-date="' + (x.due || S.day || today()) + '">' + icon('plus') + '일정 잡기</button></div>' +
     '<div class="tbar" role="toolbar" aria-label="서식">' +
       '<select id="tbBlock" aria-label="문단 모양"><option value="P">본문</option><option value="H1">큰 제목</option><option value="H2">작은 제목</option><option value="BLOCKQUOTE">인용</option></select>' +
       b('undo', svg('M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3'), '실행 취소') + b('redo', svg('m15 14 5-5-5-5M20 9H10a6 6 0 0 0 0 12h3'), '다시 실행') + sep +
@@ -920,6 +930,21 @@ function openDialog(html) {
 }
 function closeDialog() { $('ov').hidden = true; $('ov').innerHTML = ''; }
 
+var NEW_TASK = '__new';
+/** 일정 창의 '연결할 할 일' 목록: 새로 추가 / 연결 안 함 / 완료하지 않은 할 일 */
+function taskOptions(selected) {
+  var out = '<option value="' + NEW_TASK + '"' + (selected === NEW_TASK ? ' selected' : '') + '>＋ 새 할 일로 추가</option>' +
+    '<option value=""' + (!selected ? ' selected' : '') + '>연결 안 함</option>';
+  ['work', 'personal'].forEach(function (ws) {
+    var list = S.data.tasks.filter(function (x) { return x.workspace === ws && (!x.done || x.id === selected); })
+      .sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : 1; });
+    if (!list.length) return;
+    out += '<optgroup label="' + WS_LABEL[ws] + ' 할 일">' + list.map(function (x) {
+      return '<option value="' + x.id + '"' + (x.id === selected ? ' selected' : '') + '>' + esc(x.title) + (x.due ? ' (~' + ymdParts(x.due).m + '/' + ymdParts(x.due).d + ')' : '') + (x.done ? ' ✓' : '') + '</option>';
+    }).join('') + '</optgroup>';
+  });
+  return out;
+}
 function recordOptions(selected) {
   var out = '<option value="">연결 안 함</option>';
   ['work', 'personal'].forEach(function (ws) {
@@ -960,8 +985,10 @@ function eventDialog(ev) {
       '<div class="f eAllOnly" style="grid-column:span 2"><label for="eEndDate">종료일</label><input id="eEndDate" type="date" value="' + esc(ev.endDate || ev.date) + '"></div></div>' +
     '<div class="g2"><div class="f"><label for="eRem">알림</label><select id="eRem">' + opt(REMIND_LABEL, ev.reminder == null ? '' : ev.reminder) + '</select></div>' +
       '<div class="f"><span class="fl">&nbsp;</span><label class="ck"><input type="checkbox" id="eAll"' + (ev.allDay ? ' checked' : '') + '>종일 일정</label></div></div>' +
-    '<div class="g2"><div class="f"><label for="eRec">연결할 기록</label><select id="eRec">' + recordOptions(ev.recordId) + '</select></div>' +
-      '<div class="f"><label for="eLoc">장소</label><input id="eLoc" maxlength="200" value="' + esc(ev.location || '') + '"></div></div>' +
+    '<div class="g2"><div class="f"><label for="eTask">연결할 할 일</label><select id="eTask">' + taskOptions(isNew && ev.taskId == null ? NEW_TASK : ev.taskId) + '</select>' +
+        '<small class="help" id="eTaskHelp"></small></div>' +
+      '<div class="f"><label for="eRec">연결할 기록</label><select id="eRec">' + recordOptions(ev.recordId) + '</select></div></div>' +
+    '<div class="f"><label for="eLoc">장소</label><input id="eLoc" maxlength="200" value="' + esc(ev.location || '') + '"></div>' +
     '<div class="f"><label for="eMemo">메모</label><textarea id="eMemo" style="min-height:64px">' + esc(ev.memo || '') + '</textarea></div>' +
     '<fieldset class="sync"><legend>외부 캘린더에도 저장</legend>' +
       '<label><input type="checkbox" id="eG"' + (ev.toGoogle && googleOk ? ' checked' : '') + (googleOk ? '' : ' disabled') + '>Google 캘린더' + (googleOk ? '' : ' <small>(연결 안 됨)</small>') + '</label>' +
@@ -971,7 +998,11 @@ function eventDialog(ev) {
       (ev.repeat && ev.repeat !== 'none' && !isNew ? '<span class="help left">반복 일정은 전체가 함께 바뀝니다.</span>' : '') +
       '<button type="button" class="ghost" data-act="close-dlg">취소</button><button type="submit" class="btn">저장</button></div>' +
   '</form>');
-  syncAllDay();
+  syncAllDay(); syncTaskHelp();
+}
+function syncTaskHelp() {
+  var sel = $('eTask'), h = $('eTaskHelp'); if (!sel || !h) return;
+  h.textContent = sel.value === NEW_TASK ? '저장하면 이 일정 제목으로 할 일 목록에 추가됩니다.' : sel.value ? '완료하면 할 일 목록에서 체크하세요.' : '';
 }
 function syncAllDay() {
   var all = $('eAll') && $('eAll').checked;
@@ -984,7 +1015,9 @@ function newEventDefaults(opts) {
   if (rec) ws = rec.workspace;
   var st = opts.start || (d === today() ? hmOf(Math.min(22 * 60, (Math.floor(minutesOf(seoulNow().hm) / 60) + 1) * 60)) : '09:00');
   var en = hmOf(Math.min(23 * 60 + 59, minutesOf(st) + 60));
-  return { workspace: ws, date: d, endDate: d, start: st, end: en, allDay: false, repeat: 'none', reminder: 10, recordId: opts.recordId || '', toGoogle: true, toApple: true };
+  var task = opts.taskId ? S.data.tasks.filter(function (x) { return x.id === opts.taskId; })[0] : null;
+  if (task) ws = task.workspace;
+  return { title: task ? task.title : '', workspace: ws, date: d, endDate: d, start: st, end: en, allDay: false, repeat: 'none', reminder: 10, recordId: opts.recordId || '', taskId: task ? task.id : null, toGoogle: true, toApple: true };
 }
 
 function taskDialog() {
@@ -1057,20 +1090,22 @@ function submitEvent(form) {
     title: $('eTitle').value, workspace: ws, allDay: all, date: $('eDate').value,
     endDate: all ? ($('eEndDate').value || $('eDate').value) : $('eDate').value,
     start: $('eStart').value, end: $('eEnd').value, repeat: $('eRep').value,
-    reminder: $('eRem').value, recordId: $('eRec').value, location: $('eLoc').value, memo: $('eMemo').value,
+    reminder: $('eRem').value, recordId: $('eRec').value, taskId: $('eTask').value, location: $('eLoc').value, memo: $('eMemo').value,
     toGoogle: $('eG').checked, toApple: $('eI').checked
   };
   if (!ev.title.trim()) return showErr('eErr', '제목을 입력하세요.');
   if (!all && ev.end <= ev.start) return showErr('eErr', '종료 시간이 시작 시간보다 늦어야 합니다.');
   busy(form, true);
   call('saveEvent', ev).then(function (saved) {
+    var newTask = saved.newTask; delete saved.newTask;
+    if (newTask) upsertLocal(S.data.tasks, newTask);
     upsertLocal(S.data.events, saved);
     closeDialog(); render();
     var warn = [];
     if (saved.toGoogle && saved.sync.google !== 'ok') warn.push('Google: ' + saved.sync.google);
     if (saved.toApple && saved.sync.apple !== 'ok') warn.push('iCloud: ' + saved.sync.apple);
     if (warn.length) toast('앱에는 저장했지만 외부 캘린더 기록에 실패했습니다. ' + warn.join(' / '), true);
-    else toast('저장했습니다' + (saved.toGoogle || saved.toApple ? ' · ' + [saved.toGoogle ? 'Google' : '', saved.toApple ? 'iCloud' : ''].filter(Boolean).join(', ') + ' 캘린더에도 기록' : ''));
+    else toast('저장했습니다' + (newTask ? ' · 할 일에도 추가' : '') + (saved.toGoogle || saved.toApple ? ' · ' + [saved.toGoogle ? 'Google' : '', saved.toApple ? 'iCloud' : ''].filter(Boolean).join(', ') + ' 캘린더에도 기록' : ''));
   }).catch(function (e) { busy(form, false); showErr('eErr', e.message); });
 }
 
@@ -1161,7 +1196,7 @@ function doAct(act, el) {
     case 'this-month': S.month = t.slice(0, 7); render(); break;
     case 'focus-search': go('dash', { day: S.day || t }); setTimeout(function () { var q = $('q'); if (q) q.focus(); }, 30); break;
     case 'clear-search': S.q = ''; render(); break;
-    case 'new-event': eventDialog(newEventDefaults({ date: el.getAttribute('data-date'), recordId: el.getAttribute('data-rec') })); break;
+    case 'new-event': eventDialog(newEventDefaults({ date: el.getAttribute('data-date'), recordId: el.getAttribute('data-rec'), taskId: el.getAttribute('data-task-ev') })); break;
     case 'dlg-event': eventDialog(newEventDefaults({})); break;
     case 'dlg-task': taskDialog(); break;
     case 'dlg-rec': recDialog(); break;
@@ -1197,6 +1232,7 @@ document.addEventListener('change', function (e) {
   if (el.id === 'tkWs' || el.id === 'tkDue') { readTaskEditor(); flushTaskSave(); }
   if (el.id === 'tbBlock') { runDocCommand('formatBlock', el.value); el.value = 'P'; }
   if (el.id === 'eAll') syncAllDay();
+  if (el.id === 'eTask') syncTaskHelp();
   if (el.id === 'eDate' && $('eEndDate') && $('eEndDate').value < el.value) $('eEndDate').value = el.value;
   if (el.id === 'eStart' && $('eEnd') && $('eEnd').value <= el.value) $('eEnd').value = hmOf(Math.min(23 * 60 + 59, minutesOf(el.value) + 60));
   if (el.matches('#dbForm select[data-k="type"]')) { readDbForm(); renderDbDialog(); }
@@ -1287,7 +1323,11 @@ function deleteEvent(id) {
 }
 function deleteTask(id) {
   if (tkPending === id) { clearTimeout(tkTimer); tkPending = ''; }
-  call('deleteTask', { id: id }).then(function () { removeLocal(S.data.tasks, id); renderMain(); })
+  call('deleteTask', { id: id }).then(function () {
+    removeLocal(S.data.tasks, id);
+    S.data.events.forEach(function (ev) { if (ev.taskId === id) ev.taskId = ''; });
+    renderMain();
+  })
     .catch(function (err) { toast(err.message, true); });
 }
 function deleteRecord(id) {

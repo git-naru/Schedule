@@ -69,6 +69,24 @@ assert.throws(() => g.call('saveTask', Object.assign({}, done, { detail: 'x'.rep
 g.call('deleteTask', { id: task.id });
 assert.strictEqual(g.call('bootstrap').tasks.length, 0);
 
+// 일정 ↔ 할 일 연결
+const evBase = { title: '견적 회의', workspace: 'work', date: '2026-11-05', start: '10:00', end: '11:00', repeat: 'none', reminder: '10' };
+const withNew = g.call('saveEvent', Object.assign({}, evBase, { taskId: '__new' }));
+assert(withNew.newTask && withNew.taskId === withNew.newTask.id);
+assert.strictEqual(withNew.newTask.title, '견적 회의');
+assert.strictEqual(withNew.newTask.due, '2026-11-05');
+assert.strictEqual(g.call('bootstrap').events.find(e => e.id === withNew.id).newTask, undefined); // 시트에는 저장 안 함
+const noLink = g.call('saveEvent', Object.assign({}, evBase, { taskId: '' }));
+assert.strictEqual(noLink.taskId, '');
+const ghost = g.call('saveEvent', Object.assign({}, evBase, { taskId: 'no-such-task' }));
+assert.strictEqual(ghost.taskId, '');
+const existing = g.call('saveEvent', Object.assign({}, evBase, { taskId: withNew.taskId }));
+assert.strictEqual(existing.taskId, withNew.taskId);
+assert.strictEqual(g.call('bootstrap').tasks.length, 1);                    // 새로 만든 건 하나뿐
+g.call('deleteTask', { id: withNew.taskId });
+assert(g.call('bootstrap').events.every(e => !e.taskId));                     // 할 일을 지우면 연결만 끊김
+[withNew, noLink, ghost, existing].forEach(e => g.call('deleteEvent', { id: e.id }));
+
 // 기록과 연결
 const proj = boot.databases.find(d => d.name === '프로젝트');
 const rec = g.call('saveRecord', { dbId: proj.id, title: '[프로젝트 A]', values: { f1: '진행 중', f3: '2026-11-14', bogus: 'x' }, memo: '' });
