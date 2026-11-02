@@ -152,7 +152,8 @@ if (!html.includes('<script>')) throw new Error('Index.html 구조가 예상과 
 html = html.replace('<base target="_top">\n', '');
 html = html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">');
 html = html.replace('<script>', shim.trim() + '\n<script>');
-html = html.replace(/<\/body>/i, badge + '\n</body>');
+const end = html.lastIndexOf('</body>');
+html = html.slice(0, end) + badge + '\n' + html.slice(end);
 
 const out = path.join(__dirname, '..', 'dist', 'demo.html');
 fs.mkdirSync(path.dirname(out), { recursive: true });

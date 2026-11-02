@@ -63,6 +63,9 @@ const task = g.call('saveTask', { title: '보고서 초안 제출', workspace: '
 const done = g.call('saveTask', Object.assign({}, task, { done: true }));
 assert.strictEqual(done.id, task.id);
 assert.strictEqual(g.call('bootstrap').tasks[0].done, true);
+const detailed = g.call('saveTask', Object.assign({}, done, { detail: '<h2>목차</h2><ul><li>배경</li></ul>' }));
+assert.strictEqual(g.call('bootstrap').tasks[0].detail, detailed.detail);
+assert.throws(() => g.call('saveTask', Object.assign({}, done, { detail: 'x'.repeat(40001) })), /상세 내용/);
 g.call('deleteTask', { id: task.id });
 assert.strictEqual(g.call('bootstrap').tasks.length, 0);
 

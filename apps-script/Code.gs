@@ -194,9 +194,14 @@ function saveTask(input) {
     workspace: WORKSPACES.indexOf(input.workspace) >= 0 ? input.workspace : 'work',
     done: !!input.done,
     due: YMD.test(input.due || '') ? input.due : '',
+    detail: String(input.detail == null ? '' : input.detail),
     createdAt: input.createdAt || new Date().toISOString(),
   };
   if (!task.title) throw new Error('할 일을 입력하세요.');
+  // 시트 한 칸에는 5만 자까지만 들어가므로, 서식까지 포함한 상세 내용을 4만 자로 제한한다.
+  if (JSON.stringify(task.detail).length > 40000) {
+    throw new Error('상세 내용이 너무 깁니다. 일부를 줄이거나 나눠서 적어 주세요.');
+  }
   return withLock(function () { return upsert('tasks', task); });
 }
 
