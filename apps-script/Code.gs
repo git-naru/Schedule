@@ -39,7 +39,7 @@ function bootstrap() {
     return {
       today: Utilities.formatDate(now, tz, 'yyyy-MM-dd'),
       now: Utilities.formatDate(now, tz, 'HH:mm'),
-      settings: { theme: props_().getProperty('THEME') || 'posco-white' },
+      settings: { theme: props_().getProperty('THEME') || 'workbook' },
       status: status_(),
       events: readAll('events'),
       tasks: readAll('tasks'),

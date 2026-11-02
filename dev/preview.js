@@ -75,7 +75,7 @@ function seed(g, today) {
   await p.click('[data-act="clear-search"]');
   await p.click('.acc-h[data-acc="set"]'); await p.waitForTimeout(400); await p.click('[data-go="settings"]');
   await p.click('[data-theme="posco-navy"]'); await shot(p, '10-settings-theme');
-  await p.click('[data-theme="posco-white"]');
+  await p.click('[data-theme="workbook"]');
 
   const tab = await open({ width: 800, height: 1280 });
   await shot(tab, '11-tablet-portrait');
