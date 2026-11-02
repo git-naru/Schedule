@@ -1,0 +1,9 @@
+{
+  "name": "my-base",
+  "private": true,
+  "description": "개인 DB & 일정 관리 웹앱 (Google Apps Script)",
+  "scripts": {
+    "test": "node tests/run.js && node tests/server.js",
+    "preview": "node dev/preview.js dev/shots"
+  }
+}
