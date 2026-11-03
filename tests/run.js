@@ -38,6 +38,28 @@ const by = Object.fromEntries(L.map(x => [x.ev.id, x]));
 assert.deepStrictEqual([by.A.lane, by.B.lane, by.D.lane, by.A.lanes, by.B.lanes, by.D.lanes], [0, 1, 0, 2, 2, 2]);
 assert.deepStrictEqual([by.C.lane, by.C.lanes], [0, 1]);
 assert.strictEqual(ui.holidayOf('2026-10-09'), '한글날');
+
+// 할 일 탭 분류 (오늘 = 2026-11-03, 서울)
+assert.strictEqual(ui.daysBetween('2026-11-03', '2026-11-06'), 3);
+assert.strictEqual(ui.daysBetween('2026-12-31', '2027-01-01'), 1);
+assert.strictEqual(ui.seoulYmdOf('2026-11-02T16:30:00Z'), '2026-11-03'); // UTC 16:30 = 서울 다음날 01:30
+const T = [
+  { id: 'a', status: 'todo', due: '2026-11-10' },
+  { id: 'b', status: 'doing', due: '2026-11-05' },
+  { id: 'c', status: 'todo', due: '2026-11-01' },            // 지남 → 임박에 포함
+  { id: 'd', status: 'todo', due: '2026-11-06' },            // D-3 → 포함
+  { id: 'e', status: 'todo', due: '2026-11-07' },            // D-4 → 제외
+  { id: 'f', status: 'done', doneAt: '2026-11-03T01:00:00Z' }, // 오늘 완료
+  { id: 'g', status: 'done', doneAt: '2026-11-01T01:00:00Z' }, // 예전 완료
+  { id: 'h', done: true, doneAt: '2026-11-02T20:00:00Z' },     // 옛 자료(status 없음), 서울 11/3 완료
+  { id: 'i', done: false },                                    // 옛 자료, 마감 없음
+];
+const Bk = ui.taskBuckets(T, '2026-11-03');
+const ids = l => l.map(x => x.id).join('');
+assert.strictEqual(ids(Bk.todo), 'cbdeai' + 'fh');             // 마감 빠른 순, 마감 없는 건 뒤, 오늘 완료는 맨 뒤
+assert.strictEqual(ids(Bk.doing), 'b');
+assert.strictEqual(ids(Bk.soon), 'cbd');
+assert.strictEqual(ids(Bk.done), 'fhg');
 assert.strictEqual(ui.holidayOf('2026-09-25'), '추석');
 
 // 2) iCloud 일정 파일(.ics) 생성

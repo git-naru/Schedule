@@ -63,6 +63,17 @@ const task = g.call('saveTask', { title: '보고서 초안 제출', workspace: '
 const done = g.call('saveTask', Object.assign({}, task, { done: true }));
 assert.strictEqual(done.id, task.id);
 assert.strictEqual(g.call('bootstrap').tasks[0].done, true);
+assert.strictEqual(done.status, 'done');
+assert(done.doneAt);
+const doing = g.call('saveTask', { title: '진행 시험', status: 'doing' });
+assert.strictEqual(doing.status, 'doing'); assert.strictEqual(doing.done, false); assert.strictEqual(doing.doneAt, '');
+const doing2 = g.call('saveTask', Object.assign({}, doing, { done: true }));          // 체크하면 완료
+assert.strictEqual(doing2.status, 'done');
+const again = g.call('saveTask', Object.assign({}, doing2, { title: '진행 시험 (수정)' })); // 완료 상태에서 고쳐도 완료 시각 유지
+assert.strictEqual(again.doneAt, doing2.doneAt);
+const reopened = g.call('saveTask', Object.assign({}, again, { done: false }));         // 체크 해제하면 할 일로
+assert.strictEqual(reopened.status, 'todo'); assert.strictEqual(reopened.doneAt, '');
+g.call('deleteTask', { id: doing.id });
 const detailed = g.call('saveTask', Object.assign({}, done, { detail: '<h2>목차</h2><ul><li>배경</li></ul>' }));
 assert.strictEqual(g.call('bootstrap').tasks[0].detail, detailed.detail);
 assert.throws(() => g.call('saveTask', Object.assign({}, done, { detail: 'x'.repeat(40001) })), /상세 내용/);

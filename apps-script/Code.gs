@@ -154,7 +154,7 @@ function saveEvent(input) {
     let newTask = null;
     if (ev.taskId === NEW_TASK) {
       newTask = upsert('tasks', {
-        id: '', title: ev.title, workspace: ev.workspace, done: false, due: ev.date, detail: '',
+        id: '', title: ev.title, workspace: ev.workspace, status: 'todo', done: false, doneAt: '', due: ev.date, detail: '',
         createdAt: new Date().toISOString(),
       });
       ev.taskId = newTask.id;
@@ -203,12 +203,25 @@ function deleteEvent(input) {
 
 // ---------- 할 일 ----------
 
+const TASK_STATUS = ['todo', 'doing', 'done'];
+
+/** 상태: todo(할 일) → doing(진행 중) → done(완료). 예전 자료처럼 done만 있으면 그걸로 정한다. */
+function taskStatus_(input) {
+  let st = TASK_STATUS.indexOf(input.status) >= 0 ? input.status : (input.done ? 'done' : 'todo');
+  if (input.done === true) st = 'done';
+  if (input.done === false && st === 'done') st = 'todo';
+  return st;
+}
+
 function saveTask(input) {
+  const status = taskStatus_(input);
   const task = {
     id: input.id ? String(input.id) : '',
     title: text_(input.title, 200, '할 일'),
     workspace: WORKSPACES.indexOf(input.workspace) >= 0 ? input.workspace : 'work',
-    done: !!input.done,
+    status: status,
+    done: status === 'done',
+    doneAt: '',
     due: YMD.test(input.due || '') ? input.due : '',
     detail: String(input.detail == null ? '' : input.detail),
     createdAt: input.createdAt || new Date().toISOString(),
@@ -218,7 +231,12 @@ function saveTask(input) {
   if (JSON.stringify(task.detail).length > 40000) {
     throw new Error('상세 내용이 너무 깁니다. 일부를 줄이거나 나눠서 적어 주세요.');
   }
-  return withLock(function () { return upsert('tasks', task); });
+  return withLock(function () {
+    const old = task.id ? getById('tasks', task.id) : null;
+    // 완료한 시각: 이번에 완료로 바뀌면 지금, 계속 완료면 예전 시각을 유지한다.
+    if (task.done) task.doneAt = old && old.done && old.doneAt ? old.doneAt : new Date().toISOString();
+    return upsert('tasks', task);
+  });
 }
 
 function deleteTask(input) {
