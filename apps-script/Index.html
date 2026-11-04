@@ -101,6 +101,17 @@ h1,h2,h3,p{margin:0}
 .col2>.today{flex:1;min-height:380px}
 .sub2{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
 .sub2 .recs{max-height:150px;overflow:auto}
+/* 메모장 페이지: 도구 모음 하나 + 세 칸 */
+.notes{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+.ncols{flex:1;min-height:420px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ncol{min-height:0}
+.ncol h2 span{display:flex;align-items:center;gap:8px}
+.nidx{font-style:normal;font-size:11.5px;font-weight:600;line-height:20px;width:20px;text-align:center;border-radius:50%;background:var(--t-work-soft);color:var(--t-accent)}
+.ncol .doc{min-height:200px;padding:12px 14px;font-size:14.5px;border-color:transparent;background:none}
+.ncol .doc:hover{border-color:var(--t-line)}
+.ncol .doc:focus{border-color:var(--t-accent);background:var(--t-surface)}
+.ncol:focus-within{border-color:var(--t-accent)}
+
 /* 할 일: 탭 + 목록 / 고른 할 일의 문서 */
 .tkcard>h2{border-bottom:0;padding-bottom:0}
 .tktabs{display:flex;gap:2px;border-bottom:1px solid var(--t-line);overflow-x:auto;scrollbar-width:none}
@@ -161,7 +172,7 @@ button.pill{cursor:pointer;min-height:26px}
 .doc:focus{border-color:var(--t-accent)}
 .doc:empty::before{content:attr(data-ph);color:var(--t-muted)}
 .doc h1{font-size:22px;margin:.6em 0 .3em;color:var(--t-title)}
-.doc h2{font-size:18px;margin:.6em 0 .3em;color:var(--t-title)}
+.doc h2,.card .doc h2{display:block;font-size:18px;font-weight:700;margin:.6em 0 .3em;padding:0;border:0;color:var(--t-title)}
 .doc h3{font-size:16px;margin:.5em 0 .2em}
 .doc p,.doc div{margin:0}
 .doc ul,.doc ol{margin:.3em 0;padding-left:1.6em}
@@ -326,7 +337,9 @@ button.pill{cursor:pointer;min-height:26px}
   .main{padding:16px}
 }
 @media (max-width:820px){
-  .dash,.dbw,.set,.res,.sub2{grid-template-columns:minmax(0,1fr)}
+  .dash,.dbw,.set,.res,.sub2,.ncols{grid-template-columns:minmax(0,1fr)}
+  .ncols{flex:none}
+  .ncol .doc{min-height:220px}
   .tkl{flex:none;max-height:420px}
   .dash{flex:none}
   .col1,.col2{min-height:auto}
@@ -529,7 +542,7 @@ function applyTheme(id) {
 
 /* ===================== 상태 ===================== */
 var S = {
-  data: null, ws: 'all', taskId: '', tkTab: 'todo', screen: 'dash', day: '', weekOf: '', month: '', dbId: '', recId: '', newRec: false,
+  data: null, ws: 'all', taskId: '', tkTab: 'todo', noteId: '', screen: 'dash', day: '', weekOf: '', month: '', dbId: '', recId: '', newRec: false,
   open: 'home', q: '', miniMonth: '', editDb: null, theme: 'workbook'
 };
 var WS_LABEL = { work: '업무', personal: '개인' };
@@ -587,7 +600,9 @@ function renderSide() {
     return '<div class="acc' + (open ? ' open' : '') + '"><button class="acc-h" type="button" data-acc="' + id + '" aria-expanded="' + open + '">' + head + icon('chev', 's chev') + '</button><div class="acc-b"><div>' + items + '</div></div></div>';
   }
   function dbItems(ws) {
-    return sortedDbs(ws).map(function (db) {
+    return NOTE_PAGES.filter(function (pg) { return pg.ws === ws; }).map(function (pg) {
+      return link(pg.name, 'data-go="note" data-note="' + pg.id + '"', S.screen === 'note' && S.noteId === pg.id);
+    }).join('') + sortedDbs(ws).map(function (db) {
       return link(db.name, 'data-go="db" data-db="' + db.id + '"', S.screen === 'db' && S.dbId === db.id);
     }).join('') + link('+ 새 DB', 'data-act="new-db" data-ws="' + ws + '"', false);
   }
@@ -633,6 +648,7 @@ function renderMain() {
   else if (S.screen === 'month') m.innerHTML = viewMonth();
   else if (S.screen === 'db') m.innerHTML = viewDb();
   else if (S.screen === 'settings') m.innerHTML = viewSettings();
+  else if (S.screen === 'note') m.innerHTML = viewNote();
   if (S.screen === 'dash' && !S.q) scrollTimeline('.tlwrap');
   if (S.screen === 'week') scrollTimeline('.wk-scroll');
 }
@@ -724,6 +740,27 @@ function viewDash() {
     '</div>';
 }
 
+/* --- 메모장 페이지 (업무 DB › Schedule) --- */
+var NOTE_PAGES = [
+  { id: 'schedule', name: 'Schedule', ws: 'work', sections: [
+    { key: 'core', title: '저장소 핵심 기능', ph: '이 저장소가 하는 일, 주요 화면과 기능을 적어 두세요.' },
+    { key: 'consider', title: '고려사항', ph: '만들면서 주의할 점, 제약, 아직 정하지 못한 것.' },
+    { key: 'agree', title: '협의사항', ph: '누구와 무엇을 합의했는지, 날짜와 결정 내용.' }
+  ] }
+];
+function notePage(id) { return NOTE_PAGES.filter(function (p) { return p.id === id; })[0]; }
+function viewNote() {
+  var pg = notePage(S.noteId) || NOTE_PAGES[0], notes = S.data.notes || {};
+  return header(WS_LABEL[pg.ws] + ' DB · 메모장', esc(pg.name), '') +
+    '<div class="notes">' + toolbarHtml() +
+    '<div class="ncols">' + pg.sections.map(function (sec, i) {
+      var id = pg.id + ':' + sec.key;
+      return '<section class="card ncol"><h2><span><i class="nidx num">' + (i + 1) + '</i>' + esc(sec.title) + '</span><small class="saved" id="ns-' + sec.key + '"></small></h2>' +
+        '<div class="doc" contenteditable="true" role="textbox" aria-multiline="true" aria-label="' + esc(sec.title) + '" spellcheck="false" data-note="' + id + '" data-ph="' + esc(sec.ph) + '">' +
+        sanitizeHtml(notes[id] || '') + '</div></section>';
+    }).join('') + '</div></div>';
+}
+
 /* --- 할 일 목록 한 줄 --- */
 function dueLabel(due, t) {
   if (!due) return '';
@@ -752,12 +789,25 @@ function taskRow(x, t) {
 /* --- 할 일 상세 편집기 --- */
 var TB_COLORS = ['#d32f2f', '#e8710a', '#188038', '#1a73e8', '#8e24aa', '#757575'];
 var TB_MARKS = ['#fff59d', '#c8e6c9', '#bbdefb', '#ffcdd2', 'transparent'];
-function taskEditor(x) {
+/** 문서 편집 도구 모음. 마지막으로 누른 편집 칸(.doc)에 적용된다. */
+function toolbarHtml() {
   function b(cmd, label, title, val) {
     return '<button type="button" data-cmd="' + cmd + '"' + (val ? ' data-val="' + val + '"' : '') + ' title="' + title + '" aria-label="' + title + '">' + label + '</button>';
   }
   var sep = '<span class="sep" aria-hidden="true"></span>';
   function svg(d) { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>'; }
+  return '<div class="tbar" role="toolbar" aria-label="서식">' +
+      '<select id="tbBlock" aria-label="문단 모양"><option value="P">본문</option><option value="H1">큰 제목</option><option value="H2">작은 제목</option><option value="BLOCKQUOTE">인용</option></select>' +
+      b('undo', svg('M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3'), '실행 취소') + b('redo', svg('m15 14 5-5-5-5M20 9H10a6 6 0 0 0 0 12h3'), '다시 실행') + sep +
+      b('bold', '<b>B</b>', '굵게') + b('italic', '<i style="font-family:serif">I</i>', '기울임') + b('underline', '<u>U</u>', '밑줄') + b('strikeThrough', '<s>S</s>', '취소선') +
+      b('pal', '<span style="border-bottom:3px solid #d32f2f;line-height:1.1">가</span>', '글자 색', 'color') + b('pal', '<span style="background:#fff59d;color:#000;padding:0 2px">가</span>', '형광펜', 'mark') + sep +
+      b('insertUnorderedList', svg('M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01'), '글머리 기호') + b('insertOrderedList', svg('M10 6h10M10 12h10M10 18h10M4 4v4M3 18h3l-3 3h3'), '번호 매기기') +
+      b('outdent', svg('M21 5H11M21 12H11M21 19H11M7 9l-3 3 3 3'), '내어쓰기') + b('indent', svg('M21 5H11M21 12H11M21 19H11M3 9l3 3-3 3'), '들여쓰기') + sep +
+      b('justifyLeft', svg('M4 6h16M4 12h10M4 18h14'), '왼쪽 정렬') + b('justifyCenter', svg('M4 6h16M7 12h10M5 18h14'), '가운데 정렬') + b('justifyRight', svg('M4 6h16M10 12h10M6 18h14'), '오른쪽 정렬') + sep +
+      b('table', svg('M3 4h18v16H3zM3 10h18M3 15h18M9 4v16M15 4v16'), '표 넣기 (3×3)') + b('insertHorizontalRule', svg('M3 12h18'), '구분선') + b('removeFormat', svg('M4 7V5h11v2M9.5 5 7 19M14 14l6 6M20 14l-6 6'), '서식 지우기') +
+    '</div>';
+}
+function taskEditor(x) {
   return '<div class="ted" data-tk-id="' + x.id + '">' +
     '<div class="tkhead"><button type="button" class="arw tkback" data-tk-back aria-label="목록으로" title="목록으로">' + icon('left') + '</button>' +
       '<input class="tkt" id="tkTitle" value="' + esc(x.title) + '" maxlength="200" aria-label="할 일 제목">' +
@@ -773,16 +823,7 @@ function taskEditor(x) {
       }).join('') +
       '<button type="button" class="add" data-act="new-event" data-task-ev="' + x.id + '" data-date="' + (x.due || S.day || today()) + '">' + icon('plus') + '<span class="lbl">일정 잡기</span></button></div>' +
     '</div>' +
-    '<div class="tbar" role="toolbar" aria-label="서식">' +
-      '<select id="tbBlock" aria-label="문단 모양"><option value="P">본문</option><option value="H1">큰 제목</option><option value="H2">작은 제목</option><option value="BLOCKQUOTE">인용</option></select>' +
-      b('undo', svg('M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3'), '실행 취소') + b('redo', svg('m15 14 5-5-5-5M20 9H10a6 6 0 0 0 0 12h3'), '다시 실행') + sep +
-      b('bold', '<b>B</b>', '굵게') + b('italic', '<i style="font-family:serif">I</i>', '기울임') + b('underline', '<u>U</u>', '밑줄') + b('strikeThrough', '<s>S</s>', '취소선') +
-      b('pal', '<span style="border-bottom:3px solid #d32f2f;line-height:1.1">가</span>', '글자 색', 'color') + b('pal', '<span style="background:#fff59d;color:#000;padding:0 2px">가</span>', '형광펜', 'mark') + sep +
-      b('insertUnorderedList', svg('M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01'), '글머리 기호') + b('insertOrderedList', svg('M10 6h10M10 12h10M10 18h10M4 4v4M3 18h3l-3 3h3'), '번호 매기기') +
-      b('outdent', svg('M21 5H11M21 12H11M21 19H11M7 9l-3 3 3 3'), '내어쓰기') + b('indent', svg('M21 5H11M21 12H11M21 19H11M3 9l3 3-3 3'), '들여쓰기') + sep +
-      b('justifyLeft', svg('M4 6h16M4 12h10M4 18h14'), '왼쪽 정렬') + b('justifyCenter', svg('M4 6h16M7 12h10M5 18h14'), '가운데 정렬') + b('justifyRight', svg('M4 6h16M10 12h10M6 18h14'), '오른쪽 정렬') + sep +
-      b('table', svg('M3 4h18v16H3zM3 10h18M3 15h18M9 4v16M15 4v16'), '표 넣기 (3×3)') + b('insertHorizontalRule', svg('M3 12h18'), '구분선') + b('removeFormat', svg('M4 7V5h11v2M9.5 5 7 19M14 14l6 6M20 14l-6 6'), '서식 지우기') +
-    '</div>' +
+    toolbarHtml() +
     '<div class="doc" id="tDoc" contenteditable="true" role="textbox" aria-multiline="true" aria-label="상세 내용" spellcheck="false" ' +
       'data-ph="상세 내용을 적어 주세요. 위 도구로 제목·목록·표 등을 넣을 수 있고, 자동으로 저장됩니다.">' + sanitizeHtml(x.detail || '') + '</div>' +
   '</div>';
@@ -1194,6 +1235,7 @@ function submitEvent(form) {
 /* ===================== 이벤트 연결 ===================== */
 function go(screen, opts) {
   opts = opts || {};
+  Object.keys(noteTimers).forEach(flushNote);
   S.screen = screen;
   if (screen === 'dash') { if (opts.day) S.day = opts.day; else if (!S.day) S.day = today(); if (!opts.keepQ) S.q = ''; S.open = S.day === today() ? 'home' : 'cal'; S.miniMonth = S.day.slice(0, 7); }
   if (screen === 'week') { S.weekOf = opts.day || S.day || today(); S.open = 'cal'; }
@@ -1205,6 +1247,7 @@ function go(screen, opts) {
     var db = dbById(S.dbId); if (db) S.open = db.workspace;
   }
   if (screen === 'settings') S.open = 'set';
+  if (screen === 'note') { S.noteId = opts.note || S.noteId || NOTE_PAGES[0].id; S.open = (notePage(S.noteId) || NOTE_PAGES[0]).ws; }
   $('app').classList.remove('nav-open');
   render();
   $('main').scrollTop = 0;
@@ -1245,7 +1288,7 @@ document.addEventListener('click', function (e) {
   }
   if (el.hasAttribute('data-go')) {
     e.preventDefault();
-    go(el.getAttribute('data-go'), { day: el.getAttribute('data-day'), db: el.getAttribute('data-db'), rec: el.getAttribute('data-rec') });
+    go(el.getAttribute('data-go'), { day: el.getAttribute('data-day'), db: el.getAttribute('data-db'), rec: el.getAttribute('data-rec'), note: el.getAttribute('data-note') });
     return;
   }
   if (el.tagName === 'TR' && el.hasAttribute('data-rec')) { S.recId = el.getAttribute('data-rec'); S.newRec = false; renderMain(); return; }
@@ -1332,6 +1375,7 @@ document.addEventListener('click', function (e) {
 
 var memoTimer, searchTimer;
 document.addEventListener('input', function (e) {
+  if (e.target.hasAttribute && e.target.hasAttribute('data-note')) queueNoteSave(e.target);
   if (e.target.id === 'tDoc' || e.target.id === 'tkTitle') {
     readTaskEditor();
     if (e.target.id === 'tkTitle') {
@@ -1433,7 +1477,30 @@ function deleteDb(id) {
 }
 
 /* ===================== 할 일 상세 편집 ===================== */
-var tkTimer, tkPending = '', tkQueue = Promise.resolve(), tkRange = null;
+var tkTimer, tkPending = '', tkQueue = Promise.resolve(), tkRange = null, lastDoc = null;
+/** 도구 모음이 적용될 편집 칸: 마지막으로 쓰던 칸, 없으면 화면의 첫 칸 */
+function docEl() { return lastDoc && lastDoc.isConnected ? lastDoc : document.querySelector('.doc[contenteditable]'); }
+document.addEventListener('focusin', function (e) { if (e.target.classList && e.target.classList.contains('doc')) { if (lastDoc !== e.target) tkRange = null; lastDoc = e.target; } });
+
+/* 메모장 칸 자동 저장 (칸마다 따로) */
+var noteTimers = {};
+function queueNoteSave(el) {
+  var id = el.getAttribute('data-note'), key = id.split(':')[1];
+  var html = hasDetail(el.innerHTML) ? sanitizeHtml(el.innerHTML) : '';
+  S.data.notes = S.data.notes || {}; S.data.notes[id] = html;
+  var st = $('ns-' + key); if (st) st.textContent = '입력 중…';
+  clearTimeout(noteTimers[id] && noteTimers[id].t);
+  noteTimers[id] = { t: setTimeout(function () { flushNote(id); }, 800) };
+}
+function flushNote(id) {
+  if (!noteTimers[id]) return;
+  clearTimeout(noteTimers[id].t); delete noteTimers[id];
+  var key = id.split(':')[1], html = S.data.notes[id];
+  var st = $('ns-' + key); if (st) st.textContent = '저장 중…';
+  tkQueue = tkQueue.then(function () { return call('saveNote', { id: id, html: html }); }).then(function () {
+    var s2 = $('ns-' + key); if (s2 && !noteTimers[id]) s2.textContent = '저장됨';
+  }).catch(function (err) { var s2 = $('ns-' + key); if (s2) s2.textContent = '저장 실패: ' + err.message; });
+}
 function readTaskEditor() {
   var box = document.querySelector('.ted[data-tk-id]'); if (!box) return;
   var id = box.getAttribute('data-tk-id');
@@ -1475,8 +1542,9 @@ function pickTask(id) {
   S.taskId = id; renderMain();
 }
 document.addEventListener('selectionchange', function () {
-  var d = $('tDoc'), sel = window.getSelection();
-  if (d && sel.rangeCount && d.contains(sel.getRangeAt(0).commonAncestorContainer)) tkRange = sel.getRangeAt(0).cloneRange();
+  var sel = window.getSelection(); if (!sel.rangeCount) return;
+  var n = sel.getRangeAt(0).commonAncestorContainer, d = (n.nodeType === 1 ? n : n.parentNode).closest && (n.nodeType === 1 ? n : n.parentNode).closest('.doc[contenteditable]');
+  if (d) { lastDoc = d; tkRange = sel.getRangeAt(0).cloneRange(); }
 });
 // 도구 버튼을 눌러도 편집 영역의 커서·선택이 풀리지 않게 한다.
 ['mousedown', 'pointerdown'].forEach(function (t) {
@@ -1502,7 +1570,7 @@ document.addEventListener('click', function (e) {
   var btn = e.target.closest('.tbar button[data-cmd]');
   if (pal && (!btn || btn.getAttribute('data-cmd') !== 'pal')) pal.remove();
   if (!btn) return;
-  var d = $('tDoc'); if (!d) return;
+  if (!docEl()) return;
   var cmd = btn.getAttribute('data-cmd'), val = btn.getAttribute('data-val');
   if (cmd === 'pal') {
     if (pal && pal.getAttribute('data-kind') === val) return;
@@ -1515,9 +1583,12 @@ document.addEventListener('click', function (e) {
   runDocCommand(cmd, val);
 });
 function runDocCommand(cmd, val) {
-  var d = $('tDoc'); if (!d) return;
+  var d = docEl(); if (!d) return;
+  // 커서가 아직 이 칸 안에 있으면 그대로 쓰고, 빠져나갔을 때만 기억해 둔 위치로 되돌린다.
+  var sel = window.getSelection();
+  var inside = sel.rangeCount && d.contains(sel.getRangeAt(0).commonAncestorContainer);
   d.focus();
-  if (tkRange) { var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(tkRange); }
+  if (!inside && tkRange) { sel.removeAllRanges(); sel.addRange(tkRange); }
   document.execCommand('styleWithCSS', false, cmd === 'foreColor' || cmd === 'hiliteColor');
   if (cmd === 'table') {
     var row = '<tr><td><br></td><td><br></td><td><br></td></tr>';
@@ -1536,13 +1607,13 @@ function runDocCommand(cmd, val) {
   d.dispatchEvent(new Event('input', { bubbles: true }));
 }
 document.addEventListener('paste', function (e) {
-  var d = $('tDoc'); if (!d || !d.contains(e.target)) return;
+  var d = e.target.closest && e.target.closest('.doc[contenteditable]'); if (!d) return;
   var html = e.clipboardData && e.clipboardData.getData('text/html');
   if (!html) return;
   e.preventDefault();
   document.execCommand('insertHTML', false, sanitizeHtml(html));
 });
-window.addEventListener('beforeunload', function () { if (tkPending) flushTaskSave(); });
+window.addEventListener('beforeunload', function () { if (tkPending) flushTaskSave(); Object.keys(noteTimers).forEach(flushNote); });
 
 /* ===================== 시작 ===================== */
 call('bootstrap').then(function (data) {

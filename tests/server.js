@@ -58,6 +58,16 @@ assert.throws(() => g.call('saveEvent', Object.assign({}, base, { end: '13:00' }
 assert.throws(() => g.call('saveEvent', Object.assign({}, base, { date: '2026/10/30' })), /날짜/);
 assert.throws(() => g.call('saveEvent', Object.assign({}, base, { reminder: '7' })), /알림/);
 
+// 메모장 페이지 (업무 DB › Schedule)
+g.call('saveNote', { id: 'schedule:core', html: '<ul><li>일정·할 일 관리</li></ul>' });
+g.call('saveNote', { id: 'schedule:agree', html: '<p>11/4 합의</p>' });
+assert.deepStrictEqual(g.call('bootstrap').notes, { 'schedule:core': '<ul><li>일정·할 일 관리</li></ul>', 'schedule:agree': '<p>11/4 합의</p>' });
+assert.throws(() => g.call('saveNote', { id: 'quick', html: 'x' }), /메모 칸/);          // 빠른 메모를 덮어쓰지 못함
+assert.throws(() => g.call('saveNote', { id: 'schedule:core', html: 'x'.repeat(40001) }), /너무 깁니다/);
+g.call('saveMemo', { text: '빠른 메모' });
+assert.strictEqual(g.call('bootstrap').memo, '빠른 메모');
+assert.strictEqual(Object.keys(g.call('bootstrap').notes).length, 2);
+
 // 할 일
 const task = g.call('saveTask', { title: '보고서 초안 제출', workspace: 'work' });
 const done = g.call('saveTask', Object.assign({}, task, { done: true }));

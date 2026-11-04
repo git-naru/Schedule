@@ -21,6 +21,7 @@ function api(action, payload) {
     saveRecord: saveRecord,
     deleteRecord: deleteRecord,
     saveMemo: saveMemo,
+    saveNote: saveNote,
     saveSettings: saveSettings,
   };
   const fn = handlers[action];
@@ -35,7 +36,10 @@ function bootstrap() {
     seedDatabases_();
     const tz = Session.getScriptTimeZone();
     const now = new Date();
-    const memo = getById('memos', 'quick');
+    const memos = readAll('memos');
+    const memo = memos.filter(function (m) { return m.id === 'quick'; })[0];
+    const notes = {};
+    memos.forEach(function (m) { if (NOTE_ID.test(m.id)) notes[m.id] = m.text; });
     return {
       today: Utilities.formatDate(now, tz, 'yyyy-MM-dd'),
       now: Utilities.formatDate(now, tz, 'HH:mm'),
@@ -46,6 +50,7 @@ function bootstrap() {
       databases: readAll('databases'),
       records: readAll('records'),
       memo: memo ? memo.text : '',
+      notes: notes,
       sheetUrl: spreadsheet().getUrl(),
     };
   });
@@ -336,6 +341,19 @@ function unlinkRecord_(recordId) {
 function saveMemo(input) {
   return withLock(function () {
     return upsert('memos', { id: 'quick', title: '빠른 메모', text: text_(input.text, 20000, '메모') });
+  });
+}
+
+/** 메모장 페이지의 한 칸(예: 'schedule:core'). 서식 HTML은 화면에서 정리해 보낸다. */
+const NOTE_ID = /^[a-z][a-z0-9-]{0,30}:[a-z][a-z0-9-]{0,30}$/;
+function saveNote(input) {
+  const id = String(input.id || '');
+  if (!NOTE_ID.test(id)) throw new Error('메모 칸 이름이 올바르지 않습니다.');
+  const html = String(input.html == null ? '' : input.html);
+  if (JSON.stringify(html).length > 40000) throw new Error('내용이 너무 깁니다. 일부를 줄이거나 나눠서 적어 주세요.');
+  return withLock(function () {
+    const saved = upsert('memos', { id: id, title: id, text: html });
+    return { id: saved.id, updatedAt: saved.updatedAt };
   });
 }
 
