@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>My Base</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
 /* 색은 모두 --t-* 테마 변수에서 가져온다. 기본은 '공정 노트'(기술 문서·워크북 느낌: 종이색 바탕, 가는 선, 상태 알약). */
 :root{
@@ -78,7 +78,8 @@ h1,h2,h3,p{margin:0}
 .side-foot{font-size:12px;color:var(--t-sb-muted);padding:0 10px}
 
 /* ── 본문 ── */
-.main{flex:1;min-width:0;display:flex;flex-direction:column;gap:16px;padding:22px 26px;overflow:auto}
+.mainwrap{flex:1;min-width:0;display:flex;flex-direction:column}
+.main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:16px;padding:22px 26px;overflow:auto}
 .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 0 14px;border-top:3px solid var(--t-accent);border-bottom:1px solid var(--t-line)}
 .hd .ttl{flex:1;min-width:180px}
 .hd small{color:var(--t-muted);font-size:12.5px;letter-spacing:.02em}
@@ -333,6 +334,53 @@ button.pill{cursor:pointer;min-height:26px}
 .loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--t-bg);color:var(--t-muted);z-index:40;font-size:15px;text-align:center;padding:24px}
 .scrim{display:none}
 
+/* ── 코드 에디터 테마 (data-ui="code") ── */
+.sbar{display:none}
+.kh{display:none}
+:root{--f-code:'JetBrains Mono','IBM Plex Sans KR',ui-monospace,SFMono-Regular,Menlo,monospace}
+[data-ui="code"] .side,[data-ui="code"] .hd,[data-ui="code"] .card>h2,[data-ui="code"] .tktabs,[data-ui="code"] .segv,
+[data-ui="code"] .btn,[data-ui="code"] .ghost,[data-ui="code"] .pill,[data-ui="code"] .lb,[data-ui="code"] .tg,[data-ui="code"] .tbar select,
+[data-ui="code"] .search input,[data-ui="code"] .tkm .ts,[data-ui="code"] .tkmeta,[data-ui="code"] .dlg .dh,[data-ui="code"] .f>label,[data-ui="code"] .fl,
+[data-ui="code"] .toast,[data-ui="code"] .syncst,[data-ui="code"] .help{font-family:var(--f-code);letter-spacing:-.01em}
+[data-ui="code"] .brand::before{content:"❯";color:var(--t-accent);margin-right:8px}
+[data-ui="code"] .brand::after{content:"";display:inline-block;width:8px;height:18px;margin-left:4px;background:var(--t-accent);vertical-align:-2px;animation:blink 1.1s steps(1) infinite;order:0}
+[data-ui="code"] .brand{justify-content:flex-start}
+[data-ui="code"] .brand .menu-btn{margin-left:auto;order:2}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){[data-ui="code"] .brand::after{animation:none}}
+[data-ui="code"] .hd{border-top:2px solid var(--t-accent)}
+[data-ui="code"] .hd small::before{content:"~/my-base/ ";color:var(--t-accent);opacity:.8}
+[data-ui="code"] .hd h1::before{content:"# ";color:var(--t-accent);font-weight:500}
+[data-ui="code"] .card{border-radius:6px}
+[data-ui="code"] .card>h2::before{content:"//";color:var(--t-muted);font-weight:400;margin-right:8px;order:-1}
+[data-ui="code"] .card>h2{justify-content:flex-start}
+[data-ui="code"] .card>h2>small{margin-left:auto}
+[data-ui="code"] .btn,[data-ui="code"] .ghost,[data-ui="code"] .arw,[data-ui="code"] .search{border-radius:6px}
+[data-ui="code"] .kh{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border:1px solid var(--t-line);border-bottom-width:2px;border-radius:5px;font:500 12px var(--f-code);color:var(--t-muted)}
+[data-ui="code"] ::selection{background:color-mix(in srgb,var(--t-accent) 30%,transparent)}
+[data-ui="code"] .doc{caret-color:var(--t-accent)}
+/* 문서: 왼쪽 줄 번호 */
+[data-ui="code"] .doc{counter-reset:ln;padding-left:56px!important;position:relative;
+  background:linear-gradient(to right,var(--t-surface2) 0 42px,var(--t-line) 42px 43px,transparent 43px) var(--t-surface)!important}
+/* 줄 = 다른 블록을 품지 않은 문단·제목·목록 항목·인용·표. 번호는 .doc 기준 왼쪽 여백에, 높이는 그 줄 첫 글자에 맞춘다. */
+[data-ui="code"] .doc :is(p,h1,h2,h3,li,blockquote,div,table):not(:empty):not(:has(p,h1,h2,h3,li,blockquote,div,table,ul,ol)),
+[data-ui="code"] .doc table{counter-increment:ln}
+[data-ui="code"] .doc :is(p,h1,h2,h3,li,blockquote,div):not(:empty):not(:has(p,h1,h2,h3,li,blockquote,div,table,ul,ol))::before,
+[data-ui="code"] .doc table::before{content:counter(ln);position:absolute;left:4px;width:32px;text-align:right;font-family:var(--f-code);font-size:11.5px;font-weight:400;line-height:inherit;color:var(--t-muted);opacity:.7}
+[data-ui="code"] .doc table td,[data-ui="code"] .doc table th{counter-increment:none}
+[data-ui="code"] .doc li{list-style-position:outside}
+[data-ui="code"] .doc:empty::before{position:static}
+[data-ui="code"] .ncol .doc{border-color:var(--t-line)}
+/* 상태 표시줄 */
+[data-ui="code"] .sbar{display:flex;align-items:center;gap:2px;flex:none;height:28px;padding:0 0 0 0;background:var(--t-sb);border-top:1px solid var(--t-sb-line);color:var(--t-sb-muted);font:12px var(--f-code);overflow:hidden;white-space:nowrap}
+.sb-badge{display:flex;align-items:center;gap:6px;height:100%;padding:0 12px;background:var(--t-accent);color:var(--t-on-accent);font-weight:600}
+.sb-badge .i{width:14px;height:14px}
+.sb-i{height:100%;display:flex;align-items:center;padding:0 9px;border:0;background:none;color:inherit;font:inherit}
+button.sb-i:hover{background:color-mix(in srgb,var(--t-sb-text) 8%,transparent);color:var(--t-sb-text)}
+.sb-i.warn{color:var(--t-warn)}
+.sb-sp{flex:1}
+[data-ui="code"] .toast{bottom:40px}
+
 /* ── 화면 크기별 ── */
 @media (max-width:1100px){
   .dash{grid-template-columns:minmax(0,1fr) 310px}
@@ -358,6 +406,8 @@ button.pill{cursor:pointer;min-height:26px}
   .themes{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:560px){
+  .sb-wide{display:none}
+  .hd h1{font-size:19px}
   .col1>.tkcard{min-height:auto}
   .tkcard .addrow{flex-wrap:wrap}
   .tkcard .addrow #taskTitle{flex:1 1 100%;min-height:42px}
@@ -392,7 +442,7 @@ button.pill{cursor:pointer;min-height:26px}
 <div class="app" id="app">
   <nav class="side" id="side" aria-label="주 메뉴"></nav>
   <div class="scrim" data-act="close-nav"></div>
-  <main class="main" id="main"></main>
+  <div class="mainwrap"><main class="main" id="main"></main><footer class="sbar" id="sbar" aria-label="상태 표시줄"></footer></div>
 </div>
 <div class="ov" id="ov" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -865,7 +915,7 @@ function bootstrap() {
     return {
       today: Utilities.formatDate(now, tz, 'yyyy-MM-dd'),
       now: Utilities.formatDate(now, tz, 'HH:mm'),
-      settings: { theme: props_().getProperty('THEME') || 'workbook' },
+      settings: { theme: props_().getProperty('THEME') || 'code-dark' },
       status: status_(),
       events: readAll('events'),
       tasks: readAll('tasks'),
@@ -1363,7 +1413,9 @@ function taskBuckets(tasks, today) {
 
 /* ===================== 테마 ===================== */
 var THEMES = [
-  {id:'workbook', name:'공정 노트', note:'워크북 · 기준', v:{bg:'#fbfcfa',surface:'#ffffff',surface2:'#eef1ed',line:'#d3d9d4',text:'#1b2326',muted:'#5b666a',accent:'#1d5fae','on-accent':'#ffffff',title:'#1b2326',work:'#1d5fae','work-soft':'#e5ecf4','work-ink':'#1d5fae',per:'#0d8478','per-soft':'#e2f0ee','per-ink':'#0d8478',sb:'#f3f5f2','sb-text':'#1b2326','sb-muted':'#5b666a','sb-open':'#e6eae5','sb-cur-bg':'#1d5fae','sb-cur-text':'#ffffff','sb-line':'#d3d9d4','sb-dot-w':'#1d5fae','sb-dot-p':'#0d8478',warn:'#b4570a',bad:'#b02a1f'}},
+  {id:'code-dark', name:'코드 에디터 다크', note:'코드 · 다크 · 기준', ui:'code', v:{bg:'#0d1117',surface:'#161b22',surface2:'#1c2128',line:'#30363d',text:'#e6edf3',muted:'#8b949e',accent:'#58a6ff','on-accent':'#0d1117',title:'#e6edf3',work:'#58a6ff','work-soft':'#203043','work-ink':'#79c0ff',per:'#3fb950','per-soft':'#1c3329','per-ink':'#56d364',sb:'#010409','sb-text':'#e6edf3','sb-muted':'#8b949e','sb-open':'#161b22','sb-cur-bg':'#58a6ff','sb-cur-text':'#0d1117','sb-line':'#21262d','sb-dot-w':'#58a6ff','sb-dot-p':'#3fb950',warn:'#d29922',bad:'#f85149'}},
+  {id:'code-light', name:'코드 에디터 라이트', note:'코드 · 라이트', ui:'code', v:{bg:'#ffffff',surface:'#ffffff',surface2:'#f6f8fa',line:'#d0d7de',text:'#1f2328',muted:'#59636e',accent:'#0969da','on-accent':'#ffffff',title:'#1f2328',work:'#0969da','work-soft':'#ddf4ff','work-ink':'#0969da',per:'#1a7f37','per-soft':'#dafbe1','per-ink':'#1a7f37',sb:'#f6f8fa','sb-text':'#1f2328','sb-muted':'#59636e','sb-open':'#eaeef2','sb-cur-bg':'#0969da','sb-cur-text':'#ffffff','sb-line':'#d0d7de','sb-dot-w':'#0969da','sb-dot-p':'#1a7f37',warn:'#9a6700',bad:'#d1242f'}},
+  {id:'workbook', name:'공정 노트', note:'워크북', v:{bg:'#fbfcfa',surface:'#ffffff',surface2:'#eef1ed',line:'#d3d9d4',text:'#1b2326',muted:'#5b666a',accent:'#1d5fae','on-accent':'#ffffff',title:'#1b2326',work:'#1d5fae','work-soft':'#e5ecf4','work-ink':'#1d5fae',per:'#0d8478','per-soft':'#e2f0ee','per-ink':'#0d8478',sb:'#f3f5f2','sb-text':'#1b2326','sb-muted':'#5b666a','sb-open':'#e6eae5','sb-cur-bg':'#1d5fae','sb-cur-text':'#ffffff','sb-line':'#d3d9d4','sb-dot-w':'#1d5fae','sb-dot-p':'#0d8478',warn:'#b4570a',bad:'#b02a1f'}},
   {id:'workbook-dark', name:'공정 노트 다크', note:'워크북 · 다크', v:{bg:'#101518',surface:'#172024',surface2:'#1f292d',line:'#2b3539',text:'#e2e8e6',muted:'#97a2a5',accent:'#6ea9ff','on-accent':'#0d1418',title:'#e2e8e6',work:'#6ea9ff','work-soft':'#283b50','work-ink':'#6ea9ff',per:'#45c9b9','per-soft':'#204242','per-ink':'#45c9b9',sb:'#141b1e','sb-text':'#e2e8e6','sb-muted':'#97a2a5','sb-open':'#1f292d','sb-cur-bg':'#6ea9ff','sb-cur-text':'#0d1418','sb-line':'#2b3539','sb-dot-w':'#6ea9ff','sb-dot-p':'#45c9b9',warn:'#ffa152',bad:'#ff6f61'}},
   {id:'posco-blue', name:'POSCO 블루', note:'POSCO CI', v:{bg:'#f4f4f3',surface:'#ffffff',surface2:'#f4f4f3',line:'#e2e2df',text:'#000000',muted:'#4B5151',accent:'#05507D','on-accent':'#ffffff',title:'#05507D',work:'#05507D','work-soft':'#e6eef4','work-ink':'#05507D',per:'#00A5E5','per-soft':'#e0f4fc','per-ink':'#4B5151',sb:'#05507D','sb-text':'#ffffff','sb-muted':'#d6d6d3','sb-open':'rgba(255,255,255,.12)','sb-cur-bg':'#ffffff','sb-cur-text':'#05507D','sb-line':'rgba(255,255,255,.3)','sb-dot-w':'#ffffff','sb-dot-p':'#00A5E5'}},
   {id:'posco-white', name:'POSCO 화이트', note:'POSCO CI · 기준', v:{bg:'#f7f8f9',surface:'#ffffff',surface2:'#f4f4f3',line:'#e2e2df',text:'#000000',muted:'#4B5151',accent:'#05507D','on-accent':'#ffffff',title:'#05507D',work:'#05507D','work-soft':'#e6eef4','work-ink':'#05507D',per:'#00A5E5','per-soft':'#e0f4fc','per-ink':'#4B5151',sb:'#ffffff','sb-text':'#000000','sb-muted':'#4B5151','sb-open':'#e6eef4','sb-cur-bg':'#05507D','sb-cur-text':'#ffffff','sb-line':'#e2e2df','sb-dot-w':'#05507D','sb-dot-p':'#00A5E5'}},
@@ -1388,13 +1440,14 @@ function applyTheme(id) {
   var root = document.documentElement;
   Object.keys(t.v).forEach(function (k) { root.style.setProperty('--t-' + k, t.v[k]); });
   root.style.colorScheme = /다크/.test(t.note) ? 'dark' : 'light';
+  root.setAttribute('data-ui', t.ui || 'plain');
   return t.id;
 }
 
 /* ===================== 상태 ===================== */
 var S = {
   data: null, ws: 'all', taskId: '', tkTab: 'todo', noteId: '', screen: 'dash', day: '', weekOf: '', month: '', dbId: '', recId: '', newRec: false,
-  open: 'home', q: '', miniMonth: '', editDb: null, theme: 'workbook'
+  open: 'home', q: '', miniMonth: '', editDb: null, theme: 'code-dark'
 };
 var WS_LABEL = { work: '업무', personal: '개인' };
 var REPEAT_LABEL = { none: '반복 안 함', daily: '매일', weekly: '매주', monthly: '매월' };
@@ -1493,6 +1546,7 @@ function header(sub, title, right, withMenu) {
 function wsLabel(ws) { return '<span class="lb ' + (ws === 'work' ? 'lw' : 'lp') + '">' + WS_LABEL[ws] + '</span>'; }
 
 function renderMain() {
+  renderStatus();
   var m = $('main');
   if (S.screen === 'dash') m.innerHTML = S.q ? viewSearch() : viewDash();
   else if (S.screen === 'week') m.innerHTML = viewWeek();
@@ -1504,6 +1558,22 @@ function renderMain() {
   if (S.screen === 'week') scrollTimeline('.wk-scroll');
 }
 function render() { renderSide(); renderMain(); }
+/** 아래 상태 표시줄 (코드 에디터 테마에서만 보임) */
+function renderStatus() {
+  var bar = $('sbar'); if (!bar || !S.data) return;
+  var t = today(), B = taskBuckets(S.data.tasks.filter(inWs), t), st = S.data.status || { google: {}, apple: {} }, now = seoulNow();
+  function ok(m) { return m.work || m.personal; }
+  bar.innerHTML =
+    '<span class="sb-badge">' + icon('home') + 'my-base</span>' +
+    '<button type="button" class="sb-i" data-act="cycle-ws" title="보기: 전체 → 업무 → 개인">⎇ ' + (S.ws === 'all' ? '전체' : WS_LABEL[S.ws]) + '</button>' +
+    '<button type="button" class="sb-i" data-sb-tab="todo" title="완료 안 한 할 일">○ ' + B.todo.filter(function (x) { return taskStatusOf(x) !== 'done'; }).length + '</button>' +
+    '<button type="button" class="sb-i" data-sb-tab="doing" title="진행 중">◐ ' + B.doing.length + '</button>' +
+    '<button type="button" class="sb-i' + (B.soon.length ? ' warn' : '') + '" data-sb-tab="soon" title="마감 임박 (3일 안)">⚠ ' + B.soon.length + '</button>' +
+    '<span class="sb-sp"></span>' +
+    '<span class="sb-i sb-wide" title="외부 캘린더 연결">Google ' + (ok(st.google) ? '✓' : '–') + ' · iCloud ' + (ok(st.apple) ? '✓' : '–') + '</span>' +
+    '<span class="sb-i sb-wide">UTF-8</span>' +
+    '<span class="sb-i num">KST ' + t.slice(5).replace('-', '/') + ' ' + now.hm + '</span>';
+}
 function scrollTimeline(sel) {
   var el = document.querySelector(sel); if (!el) return;
   var top = el.querySelector('[data-scroll-to]');
@@ -1569,7 +1639,7 @@ function viewDash() {
       '<button type="button" class="arw" data-act="shift" data-n="1" aria-label="다음 날">' + icon('chev') + '</button>' +
       (day !== t ? '<button type="button" class="ghost" data-go="dash" data-day="' + t + '">오늘</button>' : '') +
       viewSeg('dash') +
-      '<label class="search">' + icon('search') + '<input id="q" type="search" placeholder="일정·기록·할 일 검색" aria-label="검색" value="' + esc(S.q) + '"></label>' +
+      '<label class="search">' + icon('search') + '<input id="q" type="search" placeholder="일정·기록·할 일 검색" aria-label="검색" value="' + esc(S.q) + '"><kbd class="kh" title="/ 키로 검색">/</kbd></label>' +
       '<button type="button" class="btn" data-act="new-event" data-date="' + day + '">' + icon('plus') + '새로 만들기</button>') +
     '<div class="dash">' +
       '<div class="col1">' +
@@ -1695,6 +1765,7 @@ function sanitizeHtml(html) {
       if (DROP_TAGS[tag]) { c.remove(); return; }
       clean(c);
       if (!SAFE_TAGS[tag]) { while (c.firstChild) node.insertBefore(c.firstChild, c); c.remove(); return; }
+      if ((tag === 'P' || tag === 'DIV') && !c.firstChild) { c.remove(); return; }
       var keep = [];
       SAFE_CSS.forEach(function (prop) {
         var v = c.style.getPropertyValue(prop);
@@ -1713,6 +1784,8 @@ function sanitizeHtml(html) {
 }
 function plainText(html) {
   if (!html) return '';
+  // 줄(블록)마다 띄어 써서 '제목본문'처럼 붙지 않게 한다.
+  html = String(html).replace(/<\/(p|div|h[1-6]|li|blockquote|tr|td|th)>|<br\s*\/?>/gi, ' $&');
   return new DOMParser().parseFromString('<body>' + html + '</body>', 'text/html').body.textContent || '';
 }
 function hasDetail(html) { return !!html && (/<(hr|table)/i.test(html) || !!plainText(html).trim()); }
@@ -1728,7 +1801,7 @@ function viewSearch() {
   var tasks = S.data.tasks.filter(inWs).filter(function (x) { return hit(x.title) || hit(plainText(x.detail)); });
   function list(items, fn) { return items.length ? items.slice(0, 30).map(fn).join('') : '<p class="empty">결과가 없습니다.</p>'; }
   return header('검색', '“' + esc(S.q) + '” 검색 결과',
-      '<label class="search">' + icon('search') + '<input id="q" type="search" placeholder="일정·기록·할 일 검색" aria-label="검색" value="' + esc(S.q) + '"></label>' +
+      '<label class="search">' + icon('search') + '<input id="q" type="search" placeholder="일정·기록·할 일 검색" aria-label="검색" value="' + esc(S.q) + '"><kbd class="kh" title="/ 키로 검색">/</kbd></label>' +
       '<button type="button" class="ghost" data-act="clear-search">검색 닫기</button>') +
     '<div class="res">' +
       '<section class="card"><h2>일정 <small>' + evs.length + '개</small></h2>' + list(evs, function (e) {
@@ -2153,6 +2226,8 @@ document.addEventListener('click', function (e) {
 
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape' && !$('ov').hidden) { closeDialog(); return; }
+  var ae = document.activeElement;
+  if (e.key === '/' && $('ov').hidden && !(ae && (/INPUT|TEXTAREA|SELECT/.test(ae.tagName) || ae.isContentEditable))) { e.preventDefault(); doAct('focus-search'); return; }
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role=button],tr[data-rec]')) { e.preventDefault(); e.target.click(); }
 });
 
@@ -2170,6 +2245,7 @@ function doAct(act, el) {
       render(); break;
     case 'this-week': S.weekOf = t; render(); break;
     case 'this-month': S.month = t.slice(0, 7); render(); break;
+    case 'cycle-ws': S.ws = S.ws === 'all' ? 'work' : S.ws === 'work' ? 'personal' : 'all'; render(); break;
     case 'focus-search': go('dash', { day: S.day || t }); setTimeout(function () { var q = $('q'); if (q) q.focus(); }, 30); break;
     case 'clear-search': S.q = ''; render(); break;
     case 'new-event': eventDialog(newEventDefaults({ date: el.getAttribute('data-date'), recordId: el.getAttribute('data-rec'), taskId: el.getAttribute('data-task-ev') })); break;
@@ -2331,7 +2407,18 @@ function deleteDb(id) {
 var tkTimer, tkPending = '', tkQueue = Promise.resolve(), tkRange = null, lastDoc = null;
 /** 도구 모음이 적용될 편집 칸: 마지막으로 쓰던 칸, 없으면 화면의 첫 칸 */
 function docEl() { return lastDoc && lastDoc.isConnected ? lastDoc : document.querySelector('.doc[contenteditable]'); }
-document.addEventListener('focusin', function (e) { if (e.target.classList && e.target.classList.contains('doc')) { if (lastDoc !== e.target) tkRange = null; lastDoc = e.target; } });
+document.addEventListener('focusin', function (e) {
+  var d = e.target;
+  if (!(d.classList && d.classList.contains('doc'))) return;
+  if (lastDoc !== d) tkRange = null;
+  lastDoc = d;
+  if (!d.innerHTML.trim()) {
+    d.innerHTML = '<p><br></p>';
+    var r = document.createRange(); r.setStart(d.firstChild, 0); r.collapse(true);
+    var sl = window.getSelection(); sl.removeAllRanges(); sl.addRange(r);
+  }
+});
+try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (x) {}
 
 /* 메모장 칸 자동 저장 (칸마다 따로) */
 var noteTimers = {};
@@ -2402,6 +2489,8 @@ document.addEventListener('selectionchange', function () {
   document.addEventListener(t, function (e) { if (e.target.closest('.tbar button')) e.preventDefault(); });
 });
 document.addEventListener('click', function (e) {
+  var sbt = e.target.closest('[data-sb-tab]');
+  if (sbt) { S.tkTab = sbt.getAttribute('data-sb-tab'); S.taskId = ''; go('dash', { day: today() }); return; }
   var tab = e.target.closest('[data-tk-tab]');
   if (tab) { if (tkPending) { readTaskEditor(); flushTaskSave(); } S.tkTab = tab.getAttribute('data-tk-tab'); S.taskId = ''; renderMain(); return; }
   if (e.target.closest('[data-tk-back]')) { pickTask(''); return; }
@@ -2483,7 +2572,7 @@ call('bootstrap').then(function (data) {
 });
 </script>
 
-<div style="position:fixed;right:12px;bottom:12px;z-index:9999;display:flex;gap:6px;align-items:center;font:12px/1.2 sans-serif;
+<div style="position:fixed;right:12px;bottom:40px;z-index:9999;display:flex;gap:6px;align-items:center;font:12px/1.2 sans-serif;
   background:rgba(0,0,0,.72);color:#fff;padding:6px 8px 6px 10px;border-radius:999px">
   체험판 · 이 기기에만 저장
   <button id="demoReset" onclick="__demoReset()" style="font:inherit;border:0;border-radius:999px;padding:3px 8px;background:#fff;color:#000;cursor:pointer">초기화</button>

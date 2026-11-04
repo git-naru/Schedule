@@ -10,7 +10,7 @@ let boot = g.call('bootstrap');
 assert.strictEqual(boot.databases.length, 6);
 assert.strictEqual(g.call('bootstrap').databases.length, 6);
 assert.deepStrictEqual(boot.status, { google: { work: '내 캘린더', personal: '내 캘린더' }, apple: { work: true, personal: true } });
-assert.strictEqual(boot.settings.theme, 'workbook');
+assert.strictEqual(boot.settings.theme, 'code-dark');
 assert.match(boot.today, /^\d{4}-\d{2}-\d{2}$/);
 
 // 일정 저장: 앱 + Google + iCloud

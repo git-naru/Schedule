@@ -141,7 +141,7 @@ ${server.replace(/<\/script/gi, '<\\/script')}
 </script>`;
 
 const badge = `
-<div style="position:fixed;right:12px;bottom:12px;z-index:9999;display:flex;gap:6px;align-items:center;font:12px/1.2 sans-serif;
+<div style="position:fixed;right:12px;bottom:40px;z-index:9999;display:flex;gap:6px;align-items:center;font:12px/1.2 sans-serif;
   background:rgba(0,0,0,.72);color:#fff;padding:6px 8px 6px 10px;border-radius:999px">
   체험판 · 이 기기에만 저장
   <button id="demoReset" onclick="__demoReset()" style="font:inherit;border:0;border-radius:999px;padding:3px 8px;background:#fff;color:#000;cursor:pointer">초기화</button>
